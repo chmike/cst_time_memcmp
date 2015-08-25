@@ -8,17 +8,18 @@
  * as unsigned char) of the n bytes long memory areas m1 and m2 in a time
  * exactly proportional to n.
  *
- * The cst_time_memcmp() function returns an integer less than, equal to, or
- * greater than zero if the first n bytes of m1 is found, respectively,
- * to be less than, to match, or be greater than the first n bytes of
- * m2.
+ * The cst_time_memcmp() function returns 0 if the n first bytes of m1 and
+ * m2 are equal. If the first different byte is found at index k, the function
+ * returns -1 if m1[k] < m2[k], and +1 if m1[k] > m2[k]. Appart from the
+ * comparision result, this function reveals nothing of m1 or m2.
  *
- * For a nonzero return value, the sign is determined by the sign of the
- * difference between the first pair of bytes (interpreted as unsigned
- * char) that differ in m1 and m2.
+ * The function returns also 0 when at least one of the following conditions
+ * is true.
  *
- * The return value is zero when n is zero, m1 and m2 are the same
- * memory area, a is NULL or b is NULL.
+ * - n is zero ;
+ * - m1 and m2 are the same memory area ;
+ * - m1 is NULL ;
+ * - m2 is NULL.
  */
 int cst_time_memcmp(const void *m1, const void *m2, size_t n)
 {
