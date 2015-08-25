@@ -9,9 +9,9 @@ as unsigned char) of the `n` bytes long memory areas `m1` and `m2` in a time
 directly proportional to `n`.
 
 The `cst_time_memcmp()` function returns 0 if the `n` first bytes of `m1` and 
-`m2` are equal. If the first different byte is foind at index `k`, the function
+`m2` are equal. If the first different byte is found at index `k`, the function
 returns -1 if `m1[k] < m2[k]`, and +1 if `m1[k] > m2[k]`. Appart from the 
-comparision result, this function reveals nothing on `m1` or `m2`.
+comparision result, this function reveals nothing of `m1` or `m2`.
 
 
 The function returns also 0 when at least one of the following conditions is true.
@@ -19,7 +19,7 @@ The function returns also 0 when at least one of the following conditions is tru
 - `n` is zero ;
 - `m1` and `m2` are the same memory area ;
 - `m1` is NULL ;
-- `m2` is NULL ;
+- `m2` is NULL.
 
 
 
