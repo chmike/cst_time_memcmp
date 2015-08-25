@@ -37,7 +37,8 @@ const char *data_to_hex( const unsigned char *a, size_t n) {
         sprintf(buf, "NULL");
     } else if (n < 33) {
         char *p = buf;
-        for (size_t i = 0; i < n; ++i) {
+        size_t i;
+        for (i = 0; i < n; ++i) {
             p += sprintf(p, "%02X ", a[i]);
         }
         if (p != buf) {
@@ -87,8 +88,9 @@ const unsigned char d[5][5] = {
 
 
 void test_all_cst_time_memcmp() {
-    for (size_t i = 0; i < 5; ++i) {
-        for (size_t j = 0; j < 5; ++j) {
+    size_t i, j;
+    for (i = 0; i < 5; ++i) {
+        for (j = 0; j < 5; ++j) {
             if (i != j) {
                 int test = (i < 2 && j < 2) ? 0 : i - j;
                 test_one_cst_time_memcmp(d[i], d[j], 5, test);

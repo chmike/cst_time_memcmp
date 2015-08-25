@@ -23,6 +23,3 @@ The return value is zero when at least one of the following conditions is true:
 - when `m1` and `m2` are the same memory area ;
 - when `m1` is NULL ;
 - when `m2` is NULL.
-
-
-**Note** : the code using C99
