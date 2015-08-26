@@ -30,28 +30,26 @@ The following code illustrate the none constant time memcmp() algoritm's logic.
     int memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
         size_t i;
         for (i = 0; i < n; ++i ) {
-            int tmp = m1[i] - m2[i];
-            if (tmp != 0)
-                return (tmp < 0) ? -1 : +1;
+            int diff = m1[i] - m2[i];
+            if (diff != 0)
+                return (diff < 0) ? -1 : +1;
         }
         return 0;
     }
 
 The constant time memcmp() function's algorithm is illustrated below
 
-    int memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
-        int res = 0;
+    int cst_time_memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
+        int res = 0, diff;
         if (n > 0) {
             do {
                 --n;
-                int tmp = m1[n] - m2[n];
-                if (tmp != 0)
-                    res = tmp;
+                diff = m1[n] - m2[n];
+                if (diff != 0)
+                    res = diff;
             } while (n != 0);
         }
-        if (res == 0)
-            return 0;
-        return (res < 0) ? -1 : +1;
+        return (res > 0) - (res < 0);
     }
 
 The above code compares the bytes from the last to the first byte.
@@ -67,168 +65,179 @@ with the branch followed.
 For this reason the if instruction in the loop is replaced with
 a constant time instruction yielding the same result. 
 
-    if (tmp != 0)
-        res = tmp;
+    if (diff != 0)
+        res = diff;
 
-is replaced by
+is replaced with
 
-    res = (-!tmp & res) | tmp;
+    res = (res & -!diff) | diff;
+
+In the above instruction, `-!diff` is -1 (0xFFFFFFFF) when `res == 0`
+and 0 otherwise.
     
-The computation of the return value is also different.
+## Alternate algorithms
 
-    if (res == 0)
-        return 0;
-    return (res < 0) ? -1 : +1;
+The expression `!diff` could be compiled into machine code performing a branch. 
+It depends on the compiler smartness and the machine code instruction set. 
+Some processors have a very limited machine code set and compilers are
+constrained to translate `!diff` into machine code using a branching 
+instruction. This is not the case with x86 processors and good compilers.
 
-is replaced by
+When in doubt, or to provide safe portable code, the instruction
 
-    return ((res >= 0) + (res > 0)) - 1;
+    res = (res & -!diff) | diff;
+    
+must be replaced with
+
+    res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+    
+The function will be twice slower but wont need a branching.
+
+Another solution, shown below, use a table to implement the function.
+But processing speed could be affected by partial caching of 
+the table and thus indirectly reveal something of `m1` and `m2`
+comparision. Use of this method is thus discouraged.
+
+    static signed char tbl[256] = {-1, 0, ... 0 };
+    res = (res & tbl[(unsigned char)diff]) | diff;
+
+The generation of the return value from `res` could also be 
+compiled into machine code using branching instructions. To 
+avoid this in order to obtain portable code, the 
+instruction
+
+    return (res > 0) - (res < 0);
+
+must be replaced with
+
+    return ((res - 1) >> 8) + (res >> 8) + 1;
+    
+In the above expression, `res >> 8` is -1 when `res < 0` and `(res - 1) >> 8` is
+-1 when `res <= 0`.
+
+## The code
+
+As a summary here are the different version on the code. See below in the 
+program output to see execution time comparision. You may test your 
+own configuration. 
 
 
+### Fastest implementation using subscipt
+
+    int cst_time_memcmp_fastest1(const unsigned char *m1, const unsigned char *m1, size_t n) {
+        int res = 0, diff;
+        if (n > 0) {
+            do {
+                --n;
+                diff = m1[n] - m2[n];
+                res = (res & -!diff) | diff;
+            } while (n != 0);
+        }
+        return (res > 0) - (res < 0);
+    }
+
+### Fastest implementation using pointers
+
+    int cst_time_memcmp_fastest2(const unsigned char *m1, const unsigned char *m1, size_t n) {
+        const unsigned char *pm1 = m1 + n, *pm2 = m2 + n; 
+        int res = 0;
+        if (n > 0) {
+            do {
+                int diff = *--pm1 - *--pm2;
+                res = (res & -!diff) | diff;
+            } while (pm1 != m1);
+        }
+        return (res > 0) - (res < 0);
+    }
+
+
+### Safest implementation using subscript
+
+    int cst_time_memcmp_safest1(const unsigned char *m1, const unsigned char *m1, size_t n) {
+        int res = 0, diff;
+        if (n > 0) {
+            do {
+                --n;
+                diff = m1[n] - m2[n];
+                res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+            } while (n != 0);
+        }
+        return ((res - 1) >> 8) + (res >> 8) + 1;
+    }
+
+### Safest implementation using pointers
+
+    int cst_time_memcmp_safest2(const unsigned char *m1, const unsigned char *m1, size_t n) {
+        const unsigned char *pm1 = m1 + n, *pm2 = m2 + n; 
+        int res = 0;
+        if (n > 0) {
+            do {
+                int diff = *--pm1 - *--pm2;
+                res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+            } while (pm1 != m1);
+        }
+        return ((res - 1) >> 8) + (res >> 8) + 1;
+    }
+    
 
 ## Verification
 
 The provided code comes with validation tests and a processing time
 measurement.
 
-I also added another constant time memcmp() function (NetBSD) to 
-compare performance. This function is `consttime_memcmp()` which 
-has been measured to 161 times slower.
+We compare our code execution time with the function 
+`consttime_memcmp()` provided in NetBSD. 
+Unfortunately this function doesn't return -1 or 1 and thus reveal
+something of the compared memory zone.
+
+The test consist in comparing two buffers containing 1 MiB of same bytes.
+In test 1 both buffers are filled with byte 0.
+In test 2 1 buffer is half filled with bytes 0xFF.
+In test 3 1 buffer is fully filled with bytes 0xFF.
+
+Each measurement performs the buffer comparision 500 times.
+10 measurments are performed.
 
 
-## Output of the program 
+### Discussion 
 
-    $ gcc -O2 consttime_memcmp.c main.c -lm && ./a.out 
+The fastest code is indeed the fastest. The safest code is slightly slower but 
+still faster than the `consttime_memcmp()` function. Using pointers instead
+of subscript operators is also slightly faster. 
+
+### Output of the program 
+
+    $ gcc -O3 main.c -lm && ./a.out
     Start testing
     
-            a(0x401230)= 12 34 56 78 90
-            b(0x401235)= 12 34 56 78 90
-    SUCCESS test a == b
+    ... all tests successfull ...
     
-            a(0x401230)= 12 34 56 78 90
-            b(0x40123a)= 12 34 56 90 78
-    SUCCESS test a < b
-    
-            a(0x401230)= 12 34 56 78 90
-            b(0x40123f)= 12 34 78 56 90
-    SUCCESS test a < b
-    
-            a(0x401230)= 12 34 56 78 90
-            b(0x401244)= 12 90 34 56 78
-    SUCCESS test a < b
-    
-            a(0x401230)= 12 34 56 78 90
-            b(0x401249)= 90 12 34 56 78
-    SUCCESS test a < b
-    
-            a(0x401235)= 12 34 56 78 90
-            b(0x401230)= 12 34 56 78 90
-    SUCCESS test a == b
-    
-            a(0x401235)= 12 34 56 78 90
-            b(0x40123a)= 12 34 56 90 78
-    SUCCESS test a < b
-    
-            a(0x401235)= 12 34 56 78 90
-            b(0x40123f)= 12 34 78 56 90
-    SUCCESS test a < b
-    
-            a(0x401235)= 12 34 56 78 90
-            b(0x401244)= 12 90 34 56 78
-    SUCCESS test a < b
-    
-            a(0x401235)= 12 34 56 78 90
-            b(0x401249)= 90 12 34 56 78
-    SUCCESS test a < b
-    
-            a(0x40123a)= 12 34 56 90 78
-            b(0x401230)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x40123a)= 12 34 56 90 78
-            b(0x401235)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x40123a)= 12 34 56 90 78
-            b(0x40123f)= 12 34 78 56 90
-    SUCCESS test a < b
-    
-            a(0x40123a)= 12 34 56 90 78
-            b(0x401244)= 12 90 34 56 78
-    SUCCESS test a < b
-    
-            a(0x40123a)= 12 34 56 90 78
-            b(0x401249)= 90 12 34 56 78
-    SUCCESS test a < b
-    
-            a(0x40123f)= 12 34 78 56 90
-            b(0x401230)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x40123f)= 12 34 78 56 90
-            b(0x401235)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x40123f)= 12 34 78 56 90
-            b(0x40123a)= 12 34 56 90 78
-    SUCCESS test a > b
-    
-            a(0x40123f)= 12 34 78 56 90
-            b(0x401244)= 12 90 34 56 78
-    SUCCESS test a < b
-    
-            a(0x40123f)= 12 34 78 56 90
-            b(0x401249)= 90 12 34 56 78
-    SUCCESS test a < b
-    
-            a(0x401244)= 12 90 34 56 78
-            b(0x401230)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x401244)= 12 90 34 56 78
-            b(0x401235)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x401244)= 12 90 34 56 78
-            b(0x40123a)= 12 34 56 90 78
-    SUCCESS test a > b
-    
-            a(0x401244)= 12 90 34 56 78
-            b(0x40123f)= 12 34 78 56 90
-    SUCCESS test a > b
-    
-            a(0x401244)= 12 90 34 56 78
-            b(0x401249)= 90 12 34 56 78
-    SUCCESS test a < b
-    
-            a(0x401249)= 90 12 34 56 78
-            b(0x401230)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x401249)= 90 12 34 56 78
-            b(0x401235)= 12 34 56 78 90
-    SUCCESS test a > b
-    
-            a(0x401249)= 90 12 34 56 78
-            b(0x40123a)= 12 34 56 90 78
-    SUCCESS test a > b
-    
-            a(0x401249)= 90 12 34 56 78
-            b(0x40123f)= 12 34 78 56 90
-    SUCCESS test a > b
-    
-            a(0x401249)= 90 12 34 56 78
-            b(0x401244)= 12 90 34 56 78
-    SUCCESS test a > b
-    -------------------------------------------------
-    Buffer 1 filled with 0x00 and buffer 2 with 0x00 :
-    elapsed time : mean=1.010604 ms stddev=0.016005  n=10000
-    
-    Buffer 1 filled with 0x00 and buffer 2 with 0xFF :
-    elapsed time : mean=1.012818 ms stddev=0.019014  n=10000
-    
-    consttime_memcmp() test
-    Buffer 1 filled with 0x00 and buffer 2 with 0xFF :
-    elapsed time : mean=161.510460 ms stddev=2.666180  n=10000
-    
+    ---- cst_time_memcmp_fastest1
+    test 1 : mean=104.149000 ms stddev=0.095697  n=100
+    test 2 : mean=104.121130 ms stddev=0.052406  n=100
+    test 3 : mean=104.573070 ms stddev=2.732596  n=100
+    x : 0xFFE95738
+    ---- cst_time_memcmp_fastest2
+    test 1 : mean=96.809990 ms stddev=0.037059  n=100
+    test 2 : mean=97.133720 ms stddev=1.474790  n=100
+    test 3 : mean=96.839680 ms stddev=0.999072  n=100
+    x : 0xFFE95738
+    ---- cst_time_memcmp_safest1
+    test 1 : mean=116.339240 ms stddev=0.049447  n=100
+    test 2 : mean=116.334330 ms stddev=0.035672  n=100
+    test 3 : mean=116.335910 ms stddev=0.037543  n=100
+    x : 0xFFE95738
+    ---- cst_time_memcmp_safest2
+    test 1 : mean=110.067570 ms stddev=0.033885  n=100
+    test 2 : mean=110.075140 ms stddev=0.061724  n=100
+    test 3 : mean=110.066070 ms stddev=0.030296  n=100
+    x : 0xFFE95738
+    ---- consttime_memcmp
+    test 1 : mean=159.558610 ms stddev=0.030275  n=100
+    test 2 : mean=159.561470 ms stddev=0.036409  n=100
+    test 3 : mean=159.763520 ms stddev=0.358880  n=100
+    x : 0xE96DE0C8
     done
+
+    
+    
