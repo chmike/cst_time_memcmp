@@ -84,7 +84,7 @@ is replaced with
 
     res = (res & -!diff) | diff;
 
-In the above instruction, `-!diff` is -1 (0xFFFFFFFF) when `res == 0`
+In the above instruction, `-!diff` is -1 (0xFFFFFFFF) when `diff == 0`
 and 0 otherwise.
     
 ## Alternate instructions
@@ -103,12 +103,12 @@ must be replaced with
 
     res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
     
-The function will be twice slower but wont need a branching.
+The function will be slightly slower but wont need a branching.
 
 Another solution, shown below, use a table to implement the function.
 But processing speed could be affected by partial caching of 
 the table and thus indirectly reveal something of `m1` and `m2`
-comparision. Use of this method is thus discouraged.
+comparison. Use of this method is thus discouraged.
 
     static signed char tbl[256] = {-1, 0, ... 0 };
     res = (res & tbl[(unsigned char)diff]) | diff;
