@@ -232,12 +232,13 @@ Unfortunately this function doesn't return -1 or 1 and thus reveal
 something of the compared memory zone.
 
 The test consist in comparing two buffers containing 1 MiB of same bytes.
-In test 1 both buffers are filled with byte 0.
-In test 2 1 buffer is half filled with bytes 0xFF.
-In test 3 1 buffer is fully filled with bytes 0xFF.
 
-Each measurement performs the buffer comparision 500 times.
-10 measurments are performed.
+- In test 1, both buffers are filled with 0.
+- In test 2, 1 buffer is half filled with 0xFF and the other half with 0. The other buffer is filled with 0.
+- In test 3, 1 buffer is fully filled with 0xFF, while the other buffer is filled with 0.
+
+Each measurement performs the buffer comparision 100 times.
+100 measurments are performed to compute the mean and standard deviation.
 
 
 ### Discussion 
