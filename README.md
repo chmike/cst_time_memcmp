@@ -30,6 +30,7 @@ The function returns also 0 when at least one of the following conditions is tru
     * [Fastest implementation using pointers](#fastest-implementation-using-pointers)
     * [Safest implementation using subscript](#safest-implementation-using-subscript)
     * [Safest implementation using pointers](#safest-implementation-using-pointers)
+    * [Reference code from NetBSD](#reference-code-from-netbsd)
   * [Verification](#verification)
     * [Discussion](#discussion)
     * [Output of the program](#output-of-the-program)
@@ -135,12 +136,14 @@ own configuration.
 
 ### Fastest implementation using subscipt
 
-    int cst_time_memcmp_fastest1(const unsigned char *m1, const unsigned char *m1, size_t n) {
+    int cst_time_memcmp_fastest1(const void *m1, const void *m1, size_t n) {
+        const unsigned char *pm1 = (unsigned char)m1; 
+        const unsigned char *pm2 = (unsigned char)m2; 
         int res = 0, diff;
         if (n > 0) {
             do {
                 --n;
-                diff = m1[n] - m2[n];
+                diff = pm1[n] - pm2[n];
                 res = (res & -!diff) | diff;
             } while (n != 0);
         }
@@ -149,8 +152,9 @@ own configuration.
 
 ### Fastest implementation using pointers
 
-    int cst_time_memcmp_fastest2(const unsigned char *m1, const unsigned char *m1, size_t n) {
-        const unsigned char *pm1 = m1 + n, *pm2 = m2 + n; 
+    int cst_time_memcmp_fastest2(const void *m1, const void *m1, size_t n) {
+        const unsigned char *pm1 = (unsigned char)m1 + n; 
+        const unsigned char *pm2 = (unsigned char)m2 + n; 
         int res = 0;
         if (n > 0) {
             do {
@@ -164,12 +168,14 @@ own configuration.
 
 ### Safest implementation using subscript
 
-    int cst_time_memcmp_safest1(const unsigned char *m1, const unsigned char *m1, size_t n) {
+    int cst_time_memcmp_safest1(const void *m1, const void *m1, size_t n) {
+        const unsigned char *pm1 = (unsigned char)m1; 
+        const unsigned char *pm2 = (unsigned char)m2; 
         int res = 0, diff;
         if (n > 0) {
             do {
                 --n;
-                diff = m1[n] - m2[n];
+                diff = pm1[n] - pm2[n];
                 res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
             } while (n != 0);
         }
@@ -178,8 +184,9 @@ own configuration.
 
 ### Safest implementation using pointers
 
-    int cst_time_memcmp_safest2(const unsigned char *m1, const unsigned char *m1, size_t n) {
-        const unsigned char *pm1 = m1 + n, *pm2 = m2 + n; 
+    int cst_time_memcmp_safest2(const void *m1, const void *m1, size_t n) {
+        const unsigned char *pm1 = (unsigned char)m1 + n; 
+        const unsigned char *pm2 = (unsigned char)m2 + n; 
         int res = 0;
         if (n > 0) {
             do {
@@ -188,6 +195,29 @@ own configuration.
             } while (pm1 != m1);
         }
         return ((res - 1) >> 8) + (res >> 8) + 1;
+    }
+
+### Reference code from NetBSD
+
+    int consttime_memcmp(const void *b1, const void *b2, size_t len)
+    {
+        const uint8_t *c1, *c2;
+        uint16_t d, r, m;
+        uint16_t v;
+    
+        c1 = b1;
+        c2 = b2;
+        r = 0;
+        while (len) {
+            v = ((uint16_t)(uint8_t)r)+255;
+            m = v/256-1;
+            d = (uint16_t)((int)*c1 - (int)*c2);
+            r |= (d & m);
+            ++c1;
+            ++c2;
+            --len;
+        }
+        return (int)((int32_t)(uint16_t)((uint32_t)r + 0x8000) - 0x8000);
     }
     
 
