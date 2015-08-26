@@ -21,7 +21,18 @@ The function returns also 0 when at least one of the following conditions is tru
 - `m1` is NULL ;
 - `m2` is NULL.
 
+## Table of content
 
+  * [Algorithm](#algorithm)
+  * [Alternate instructions](#alternate-instructions)
+  * [The code](#the-code)
+    * [Fastest implementation using subscipt](#fastest-implementation-using-subscipt)
+    * [Fastest implementation using pointers](#fastest-implementation-using-pointers)
+    * [Safest implementation using subscript](#safest-implementation-using-subscript)
+    * [Safest implementation using pointers](#safest-implementation-using-pointers)
+  * [Verification](#verification)
+    * [Discussion](#discussion)
+    * [Output of the program](#output-of-the-program)
 
 ## Algorithm
 
@@ -75,7 +86,7 @@ is replaced with
 In the above instruction, `-!diff` is -1 (0xFFFFFFFF) when `res == 0`
 and 0 otherwise.
     
-## Alternate algorithms
+## Alternate instructions
 
 The expression `!diff` could be compiled into machine code performing a branch. 
 It depends on the compiler smartness and the machine code instruction set. 
