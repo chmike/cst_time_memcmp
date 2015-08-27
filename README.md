@@ -91,7 +91,7 @@ and 0 otherwise.
 
 The expression `!diff` could be compiled into machine code performing a branch. 
 It depends on the compiler smartness and the machine code instruction set. 
-Some processors have a very limited machine code set and compilers are
+Some processors have a very limited machine instruction set and compilers are
 constrained to translate `!diff` into machine code using a branching 
 instruction. This is not the case with x86 processors and good compilers.
 
@@ -136,7 +136,7 @@ own configuration.
 
 ### Fastest implementation using subscipt
 
-    int cst_time_memcmp_fastest1(const void *m1, const void *m1, size_t n) {
+    int cst_time_memcmp_fastest1(const void *m1, const void *m2, size_t n) {
         const unsigned char *pm1 = (unsigned char)m1; 
         const unsigned char *pm2 = (unsigned char)m2; 
         int res = 0, diff;
@@ -152,7 +152,7 @@ own configuration.
 
 ### Fastest implementation using pointers
 
-    int cst_time_memcmp_fastest2(const void *m1, const void *m1, size_t n) {
+    int cst_time_memcmp_fastest2(const void *m1, const void *m2, size_t n) {
         const unsigned char *pm1 = (unsigned char)m1 + n; 
         const unsigned char *pm2 = (unsigned char)m2 + n; 
         int res = 0;
@@ -168,7 +168,7 @@ own configuration.
 
 ### Safest implementation using subscript
 
-    int cst_time_memcmp_safest1(const void *m1, const void *m1, size_t n) {
+    int cst_time_memcmp_safest1(const void *m1, const void *m2, size_t n) {
         const unsigned char *pm1 = (unsigned char)m1; 
         const unsigned char *pm2 = (unsigned char)m2; 
         int res = 0, diff;
@@ -184,7 +184,7 @@ own configuration.
 
 ### Safest implementation using pointers
 
-    int cst_time_memcmp_safest2(const void *m1, const void *m1, size_t n) {
+    int cst_time_memcmp_safest2(const void *m1, const void *m2, size_t n) {
         const unsigned char *pm1 = (unsigned char)m1 + n; 
         const unsigned char *pm2 = (unsigned char)m2 + n; 
         int res = 0;
