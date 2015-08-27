@@ -1,8 +1,8 @@
 # Constant time memcmp() function
 
-
-    int cst_time_memcmp(const void *m1, const void *m2, size_t n)
-
+``` C
+int cst_time_memcmp(const void *m1, const void *m2, size_t n)
+```
 
 The `cst_time_memcmp()` function compares the first `n` bytes (each interpreted
 as unsigned char) of the `n` bytes long memory areas `m1` and `m2` in a time
@@ -39,30 +39,34 @@ The function returns also 0 when at least one of the following conditions is tru
 
 The following code illustrate the none constant time memcmp() algoritm's logic. 
 
-    int memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
-        size_t i;
-        for (i = 0; i < n; ++i ) {
-            int diff = m1[i] - m2[i];
-            if (diff != 0)
-                return (diff < 0) ? -1 : +1;
-        }
-        return 0;
+``` C
+int memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
+    size_t i;
+    for (i = 0; i < n; ++i ) {
+        int diff = m1[i] - m2[i];
+        if (diff != 0)
+            return (diff < 0) ? -1 : +1;
     }
+    return 0;
+}
+```
 
 The constant time memcmp() function's algorithm is illustrated below
 
-    int cst_time_memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
-        int res = 0, diff;
-        if (n > 0) {
-            do {
-                --n;
-                diff = m1[n] - m2[n];
-                if (diff != 0)
-                    res = diff;
-            } while (n != 0);
-        }
-        return (res > 0) - (res < 0);
+``` C
+int cst_time_memcmp(const unsigned char *m1, const unsigned char *m1, size_t n) {
+    int res = 0, diff;
+    if (n > 0) {
+        do {
+            --n;
+            diff = m1[n] - m2[n];
+            if (diff != 0)
+                res = diff;
+        } while (n != 0);
     }
+    return (res > 0) - (res < 0);
+}
+```
 
 The above code compares the bytes from the last to the first byte.
 Every time different bytes are found, the difference is stored in res.
@@ -77,12 +81,16 @@ with the branch followed.
 For this reason the if instruction in the loop is replaced with
 a constant time instruction yielding the same result. 
 
-    if (diff != 0)
-        res = diff;
+``` C
+if (diff != 0)
+    res = diff;
+```
 
 is replaced with
 
-    res = (res & -!diff) | diff;
+``` C
+res = (res & -!diff) | diff;
+```
 
 In the above instruction, `-!diff` is -1 (0xFFFFFFFF) when `diff == 0`
 and 0 otherwise.
@@ -97,11 +105,15 @@ instruction. This is not the case with x86 processors and good compilers.
 
 When in doubt, or to provide safe portable code, the instruction
 
-    res = (res & -!diff) | diff;
+``` C
+res = (res & -!diff) | diff;
+```
     
 must be replaced with
 
-    res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+``` C
+res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+```
     
 The function will be slightly slower but wont need a branching.
 
@@ -110,19 +122,25 @@ But processing speed could be affected by partial caching of
 the table and thus indirectly reveal something of `m1` and `m2`
 comparison. Use of this method is thus discouraged.
 
-    static signed char tbl[256] = {-1, 0, ... 0 };
-    res = (res & tbl[(unsigned char)diff]) | diff;
+``` C
+static signed char tbl[256] = {-1, 0, ... 0 };
+res = (res & tbl[(unsigned char)diff]) | diff;
+```
 
 The generation of the return value from `res` could also be 
 compiled into machine code using branching instructions. To 
 avoid this in order to obtain portable code, the 
 instruction
 
-    return (res > 0) - (res < 0);
+``` C
+return (res > 0) - (res < 0);
+```
 
 must be replaced with
 
-    return ((res - 1) >> 8) + (res >> 8) + 1;
+``` C
+return ((res - 1) >> 8) + (res >> 8) + 1;
+```
     
 In the above expression, `res >> 8` is -1 when `res < 0` and `(res - 1) >> 8` is
 -1 when `res <= 0`.
@@ -136,89 +154,102 @@ own configuration.
 
 ### Fastest implementation using subscipt
 
-    int cst_time_memcmp_fastest1(const void *m1, const void *m2, size_t n) {
-        const unsigned char *pm1 = (unsigned char)m1; 
-        const unsigned char *pm2 = (unsigned char)m2; 
-        int res = 0, diff;
-        if (n > 0) {
-            do {
-                --n;
-                diff = pm1[n] - pm2[n];
-                res = (res & -!diff) | diff;
-            } while (n != 0);
-        }
-        return (res > 0) - (res < 0);
+``` C   
+int cst_time_memcmp_fastest1(const void *m1, const void *m2, size_t n) 
+{
+    const unsigned char *pm1 = (unsigned char)m1; 
+    const unsigned char *pm2 = (unsigned char)m2; 
+    int res = 0, diff;
+    if (n > 0) {
+        do {
+            --n;
+            diff = pm1[n] - pm2[n];
+            res = (res & -!diff) | diff;
+        } while (n != 0);
     }
+    return (res > 0) - (res < 0);
+}
+```
 
 ### Fastest implementation using pointers
 
-    int cst_time_memcmp_fastest2(const void *m1, const void *m2, size_t n) {
-        const unsigned char *pm1 = (unsigned char)m1 + n; 
-        const unsigned char *pm2 = (unsigned char)m2 + n; 
-        int res = 0;
-        if (n > 0) {
-            do {
-                int diff = *--pm1 - *--pm2;
-                res = (res & -!diff) | diff;
-            } while (pm1 != m1);
-        }
-        return (res > 0) - (res < 0);
+``` C
+int cst_time_memcmp_fastest2(const void *m1, const void *m2, size_t n) 
+{
+    const unsigned char *pm1 = (unsigned char)m1 + n; 
+    const unsigned char *pm2 = (unsigned char)m2 + n; 
+    int res = 0;
+    if (n > 0) {
+        do {
+            int diff = *--pm1 - *--pm2;
+            res = (res & -!diff) | diff;
+        } while (pm1 != m1);
     }
-
+    return (res > 0) - (res < 0);
+}
+```
 
 ### Safest implementation using subscript
 
-    int cst_time_memcmp_safest1(const void *m1, const void *m2, size_t n) {
-        const unsigned char *pm1 = (unsigned char)m1; 
-        const unsigned char *pm2 = (unsigned char)m2; 
-        int res = 0, diff;
-        if (n > 0) {
-            do {
-                --n;
-                diff = pm1[n] - pm2[n];
-                res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
-            } while (n != 0);
-        }
-        return ((res - 1) >> 8) + (res >> 8) + 1;
+``` C
+int cst_time_memcmp_safest1(const void *m1, const void *m2, size_t n) 
+{
+    const unsigned char *pm1 = (unsigned char)m1; 
+    const unsigned char *pm2 = (unsigned char)m2; 
+    int res = 0, diff;
+    if (n > 0) {
+        do {
+            --n;
+            diff = pm1[n] - pm2[n];
+            res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+        } while (n != 0);
     }
+    return ((res - 1) >> 8) + (res >> 8) + 1;
+}
+```
 
 ### Safest implementation using pointers
 
-    int cst_time_memcmp_safest2(const void *m1, const void *m2, size_t n) {
-        const unsigned char *pm1 = (unsigned char)m1 + n; 
-        const unsigned char *pm2 = (unsigned char)m2 + n; 
-        int res = 0;
-        if (n > 0) {
-            do {
-                int diff = *--pm1 - *--pm2;
-                res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
-            } while (pm1 != m1);
-        }
-        return ((res - 1) >> 8) + (res >> 8) + 1;
+``` C
+int cst_time_memcmp_safest2(const void *m1, const void *m2, size_t n) 
+{
+    const unsigned char *pm1 = (unsigned char)m1 + n; 
+    const unsigned char *pm2 = (unsigned char)m2 + n; 
+    int res = 0;
+    if (n > 0) {
+        do {
+            int diff = *--pm1 - *--pm2;
+            res = (res & (((diff - 1) & ~diff) >> 8)) | diff;
+        } while (pm1 != m1);
     }
+    return ((res - 1) >> 8) + (res >> 8) + 1;
+}
+```
 
 ### Reference code from NetBSD
 
-    int consttime_memcmp(const void *b1, const void *b2, size_t len)
-    {
-        const uint8_t *c1, *c2;
-        uint16_t d, r, m;
-        uint16_t v;
-    
-        c1 = b1;
-        c2 = b2;
-        r = 0;
-        while (len) {
-            v = ((uint16_t)(uint8_t)r)+255;
-            m = v/256-1;
-            d = (uint16_t)((int)*c1 - (int)*c2);
-            r |= (d & m);
-            ++c1;
-            ++c2;
-            --len;
-        }
-        return (int)((int32_t)(uint16_t)((uint32_t)r + 0x8000) - 0x8000);
+``` C
+int consttime_memcmp(const void *b1, const void *b2, size_t len)
+{
+    const uint8_t *c1, *c2;
+    uint16_t d, r, m;
+    uint16_t v;
+
+    c1 = b1;
+    c2 = b2;
+    r = 0;
+    while (len) {
+        v = ((uint16_t)(uint8_t)r)+255;
+        m = v/256-1;
+        d = (uint16_t)((int)*c1 - (int)*c2);
+        r |= (d & m);
+        ++c1;
+        ++c2;
+        --len;
     }
+    return (int)((int32_t)(uint16_t)((uint32_t)r + 0x8000) - 0x8000);
+}
+```
     
 
 ## Verification
