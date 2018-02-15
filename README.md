@@ -9,11 +9,12 @@ comparison of the byte array `m1` and `m2`. The processing time is independed
 of the byte values of `m1` and `m2`. It varies only with `n`. 
 
 The `cst_time_memcmp()` function returns `0` when the `n` first bytes of `m1` and 
-`m2` are equal. When the first different byte is found at index `k`, the function
-returns `-1` when `m1[k] < m2[k]`, and `+1` when `m1[k] > m2[k]`. Appart from the 
-comparision result, this function reveals nothing of thebyte arrays `m1` and `m2`.
+`m2` are equal. When the first different byte is found at index `k`, with `k < 0`, 
+the function returns `-1` when `m1[k] < m2[k]`, and `+1` when `m1[k] > m2[k]`. 
+Appart from the comparision result, this function reveals nothing of the byte 
+arrays `m1` and `m2`.
 
-The function returns also 0 when at least one of the following conditions is true.
+The function returns also `0` when at least one of the following conditions is true.
 
 - `n` is zero ;
 - `m1` and `m2` are the same memory area ;
