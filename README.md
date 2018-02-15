@@ -4,15 +4,14 @@
 int cst_time_memcmp(const void *m1, const void *m2, size_t n)
 ```
 
-The `cst_time_memcmp()` function compares the first `n` bytes (each interpreted
-as unsigned char) of the `n` bytes long memory areas `m1` and `m2` in a time
-directly proportional to `n`.
+The `cst_time_memcmp()` function return the result of a lexicographical 
+comparison of the byte array `m1` and `m2`. The processing time is independed
+of the byte values of `m1` and `m2`. It varies only with `n`. 
 
-The `cst_time_memcmp()` function returns 0 if the `n` first bytes of `m1` and 
-`m2` are equal. If the first different byte is found at index `k`, the function
-returns -1 if `m1[k] < m2[k]`, and +1 if `m1[k] > m2[k]`. Appart from the 
-comparision result, this function reveals nothing of `m1` or `m2`.
-
+The `cst_time_memcmp()` function returns `0` when the `n` first bytes of `m1` and 
+`m2` are equal. When the first different byte is found at index `k`, the function
+returns `-1` when `m1[k] < m2[k]`, and `+1` when `m1[k] > m2[k]`. Appart from the 
+comparision result, this function reveals nothing of thebyte arrays `m1` and `m2`.
 
 The function returns also 0 when at least one of the following conditions is true.
 
