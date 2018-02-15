@@ -226,7 +226,9 @@ int cst_time_memcmp_safest2(const void *m1, const void *m2, size_t n)
 }
 ```
 
-### Reference code from NetBSD
+### Alternate constant time memcmp function
+
+The following constant time `memcmp` function code was found here: ftp://ftp.icm.edu.pl/pub/NetBSD/misc/apb/consttime_memcmp.c. It was proposed to NetBSD, but finally rejected by the developpers because they didn't found any use case for such a function. Test of byte array equality is the most frequent and where constant time matters. This code is thus used as reference implementation and is unrelated to NetBSD. See issue [#2](/../../issues/2) for the discussion and clarification. 
 
 ``` C
 int consttime_memcmp(const void *b1, const void *b2, size_t len)
@@ -257,8 +259,7 @@ int consttime_memcmp(const void *b1, const void *b2, size_t len)
 The provided code comes with validation tests and a processing time
 measurement.
 
-We compare our code execution time with the function 
-`consttime_memcmp()` provided in NetBSD. 
+We compare our code execution time with the reference function `consttime_memcmp()`. 
 Unfortunately this function doesn't return -1 or 1 and thus reveal
 something of the compared memory zone.
 
@@ -277,6 +278,10 @@ Each measurement performs the buffer comparision 100 times.
 The fastest code is indeed the fastest. The safest code is slightly slower but 
 still faster than the `consttime_memcmp()` function. Using pointers instead
 of subscript operators is also slightly faster. 
+
+It is valid but also an overkill to use the `cst_time_memcmp` function to simply test byte array equality. A simpler and faster algoritm exist for that and you'll find this function in all good crypto library. 
+
+While some people may not see a use case for a constant time byte array lexicographical comparison, it doesn't prove no use case exist. Nevertheless, if there are no obvious and frequent use case, it is perfectly justified to not include it in a library. Whoever need it can copy the code from here. 
 
 ### Output of the program 
 
