@@ -157,8 +157,8 @@ own configuration.
 ``` C   
 int cst_time_memcmp_fastest1(const void *m1, const void *m2, size_t n) 
 {
-    const unsigned char *pm1 = (unsigned char)m1; 
-    const unsigned char *pm2 = (unsigned char)m2; 
+    const unsigned char *pm1 = (const unsigned char*)m1; 
+    const unsigned char *pm2 = (const unsigned char*)m2; 
     int res = 0, diff;
     if (n > 0) {
         do {
@@ -176,8 +176,8 @@ int cst_time_memcmp_fastest1(const void *m1, const void *m2, size_t n)
 ``` C
 int cst_time_memcmp_fastest2(const void *m1, const void *m2, size_t n) 
 {
-    const unsigned char *pm1 = (unsigned char)m1 + n; 
-    const unsigned char *pm2 = (unsigned char)m2 + n; 
+    const unsigned char *pm1 = (const unsigned char*)m1 + n; 
+    const unsigned char *pm2 = (const unsigned char*)m2 + n; 
     int res = 0;
     if (n > 0) {
         do {
@@ -194,8 +194,8 @@ int cst_time_memcmp_fastest2(const void *m1, const void *m2, size_t n)
 ``` C
 int cst_time_memcmp_safest1(const void *m1, const void *m2, size_t n) 
 {
-    const unsigned char *pm1 = (unsigned char)m1; 
-    const unsigned char *pm2 = (unsigned char)m2; 
+    const unsigned char *pm1 = (const unsigned char*)m1; 
+    const unsigned char *pm2 = (const unsigned char*)m2; 
     int res = 0, diff;
     if (n > 0) {
         do {
@@ -213,8 +213,8 @@ int cst_time_memcmp_safest1(const void *m1, const void *m2, size_t n)
 ``` C
 int cst_time_memcmp_safest2(const void *m1, const void *m2, size_t n) 
 {
-    const unsigned char *pm1 = (unsigned char)m1 + n; 
-    const unsigned char *pm2 = (unsigned char)m2 + n; 
+    const unsigned char *pm1 = (const unsigned char*)m1 + n; 
+    const unsigned char *pm2 = (const unsigned char*)m2 + n; 
     int res = 0;
     if (n > 0) {
         do {
